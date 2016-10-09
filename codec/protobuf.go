@@ -48,9 +48,10 @@ type ProtobufProtocol struct {
 	maxSend        int
 	valueToMsgType map[uint16]reflect.Type
 	msgTypeToValue map[reflect.Type]uint16
+	context interface{}
 }
 
-func NewProtobufProtocol(msgNames []string) *ProtobufProtocol {
+func NewProtobufProtocol(context interface{}, msgNames []string) *ProtobufProtocol {
 	p := &ProtobufProtocol{}
 
 
@@ -58,6 +59,7 @@ func NewProtobufProtocol(msgNames []string) *ProtobufProtocol {
 	p.maxSend =  math.MaxUint16
 	p.valueToMsgType = map[uint16]reflect.Type{}
 	p.msgTypeToValue = map[reflect.Type]uint16{}
+	p.context = context
 
 	for i, msgName := range msgNames {
 		t := proto.MessageType(msgName)
@@ -129,6 +131,7 @@ func (p *ProtobufProtocol) NewCodec(rw io.ReadWriter) (cc link.Codec, ctx link.C
 		headBuf: make([]byte, new(protobufPacketHeader).HeaderSize()),
 	}
 	cc = codec
+	ctx = p.context
 	return
 }
 
