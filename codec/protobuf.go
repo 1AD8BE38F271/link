@@ -50,18 +50,12 @@ type ProtobufProtocol struct {
 	msgTypeToValue map[reflect.Type]uint16
 }
 
-func NewProtobufProtocol(maxRecv, maxSend int, msgNames []string) *ProtobufProtocol {
+func NewProtobufProtocol(msgNames []string) *ProtobufProtocol {
 	p := &ProtobufProtocol{}
 
-	if maxRecv > math.MaxUint16 {
-		maxRecv = math.MaxUint16
-	}
-	if maxSend > math.MaxUint16 {
-		maxSend = math.MaxUint16
-	}
 
-	p.maxRecv = maxRecv
-	p.maxSend = maxSend
+	p.maxRecv = math.MaxUint16
+	p.maxSend =  math.MaxUint16
 	p.valueToMsgType = map[uint16]reflect.Type{}
 	p.msgTypeToValue = map[reflect.Type]uint16{}
 
