@@ -26,7 +26,7 @@ func TestProtobufCodec(t *testing.T) {
 	var stream bytes.Buffer
 	protocol := NewProtobufProtocol(nil, []string{"protodef.TestPacket"})
 
-	codec, _, _ := protocol.NewCodec(&stream)
+	codec,  _ := protocol.NewCodec(&stream)
 
 	sendMsg1 := &TestPacket{
 		Mark: false,

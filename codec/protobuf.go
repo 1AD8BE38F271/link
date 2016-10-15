@@ -124,14 +124,13 @@ func (d *ProtobufProtocol) DecodeBody(body []byte, h *protobufPacketHeader) (msg
 	return
 }
 
-func (p *ProtobufProtocol) NewCodec(rw io.ReadWriter) (cc link.Codec, ctx link.Context, err error) {
+func (p *ProtobufProtocol) NewCodec(rw io.ReadWriter) (cc link.Codec, err error) {
 	codec := &protobufCodec{
 		rw: rw,
 		ProtobufProtocol: p,
 		headBuf: make([]byte, new(protobufPacketHeader).HeaderSize()),
 	}
 	cc = codec
-	ctx = p.context
 	return
 }
 
