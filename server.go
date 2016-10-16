@@ -12,17 +12,6 @@ type Server struct {
 	sendChanSize int
 }
 
-type Handler interface {
-	HandleSession(*Session)
-}
-
-var _ Handler = HandlerFunc(nil)
-
-type HandlerFunc func(*Session)
-
-func (f HandlerFunc) HandleSession(session *Session) {
-	f(session)
-}
 
 func NewServer(l net.Listener, p Protocol, sendChanSize int) *Server {
 	return &Server{
