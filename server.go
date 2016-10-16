@@ -1,6 +1,9 @@
 package link
 
-import "net"
+import (
+	"net"
+	"time"
+)
 
 type Server struct {
 	manager      *Manager
@@ -35,9 +38,25 @@ func (server *Server) Listener() net.Listener {
 }
 
 func (server *Server) Serve(handler Handler) error {
+	var tempDelay time.Duration
+
 	for {
-		conn, err := Accept(server.listener)
+		conn, err := server.listener.Accept()
 		if err != nil {
+
+			if ne, ok := err.(net.Error); ok && ne.Temporary() {
+				if tempDelay == 0 {
+					tempDelay = 5 * time.Millisecond
+				} else {
+					tempDelay *= 2
+				}
+				if max := 1 * time.Second; tempDelay > max {
+					tempDelay = max
+				}
+				time.Sleep(tempDelay)
+				continue
+			}
+
 			return err
 		}
 
