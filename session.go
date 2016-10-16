@@ -13,9 +13,9 @@ var SessionBlockedError = errors.New("Session Blocked")
 var globalSessionId uint64
 
 type Session struct {
-	id       uint64
-	codec    Codec
-	sendChan chan interface{}
+	id             uint64
+	codec          Codec
+	sendChan       chan interface{}
 
 	closeFlag      int32
 	closeChan      chan int
@@ -23,6 +23,8 @@ type Session struct {
 	closeMutex     sync.Mutex
 	closeCallbacks *list.List
 
+	readSpeed      *SpeedCounter
+	writeSpeed     *SpeedCounter
 }
 
 func NewSession(codec Codec, sendChanSize int) *Session {
@@ -30,6 +32,8 @@ func NewSession(codec Codec, sendChanSize int) *Session {
 		codec:     codec,
 		closeChan: make(chan int),
 		id:        atomic.AddUint64(&globalSessionId, 1),
+		readSpeed: NewSpeedCounter(),
+		writeSpeed:NewSpeedCounter(),
 	}
 	if sendChanSize > 0 {
 		session.sendChan = make(chan interface{}, sendChanSize)
@@ -61,6 +65,7 @@ func (session *Session) Codec() Codec {
 }
 
 func (session *Session) Receive() (interface{}, error) {
+	session.readSpeed.Add(1)
 	msg, err := session.codec.Receive()
 	if err != nil {
 		session.Close()
@@ -83,9 +88,13 @@ func (session *Session) sendLoop() {
 }
 
 func (session *Session) Send(msg interface{}) (err error) {
+
 	if session.IsClosed() {
 		return SessionClosedError
 	}
+
+	session.writeSpeed.Add(1)
+
 	if session.sendChan == nil {
 		return session.codec.Send(msg)
 	}
@@ -97,6 +106,9 @@ func (session *Session) Send(msg interface{}) (err error) {
 	}
 }
 
+func (session *Session) GetSpeed() (uint64) {
+	return uint64(session.readSpeed.Speed + session.writeSpeed.Speed)
+}
 
 type closeCallbackFunc func(*Session)
 

@@ -55,6 +55,29 @@ func (manager *Manager) GetSession(sessionID uint64) *Session {
 	return session
 }
 
+func (manager *Manager) GetSessions() (sess []*Session) {
+	for i := 0; i < sessionMapNum; i++ {
+		smap := &manager.sessionMaps[i]
+		smap.RLock()
+		for _, session := range smap.sessions {
+			sess = append(sess, session)
+		}
+		smap.RUnlock()
+	}
+
+	return
+}
+
+func (manager *Manager) GetSize() (size int) {
+	for i := 0; i < sessionMapNum; i++ {
+		smap := &manager.sessionMaps[i]
+		smap.RLock()
+		size += len(smap.sessions)
+		smap.RUnlock()
+	}
+	return
+}
+
 func (manager *Manager) putSession(session *Session) {
 	smap := &manager.sessionMaps[session.id%sessionMapNum]
 	smap.Lock()
