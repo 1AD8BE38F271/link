@@ -48,22 +48,23 @@ type ProtobufProtocol struct {
 	maxSend        int
 	valueToMsgType map[uint16]reflect.Type
 	msgTypeToValue map[reflect.Type]uint16
-	context interface{}
+	context        interface{}
 }
 
-func NewProtobufProtocol(context interface{}, msgNames []string) *ProtobufProtocol {
+func NewProtobufProtocol(msgTypes []reflect.Type) *ProtobufProtocol {
 	p := &ProtobufProtocol{}
 
-
 	p.maxRecv = math.MaxUint16
-	p.maxSend =  math.MaxUint16
+	p.maxSend = math.MaxUint16
 	p.valueToMsgType = map[uint16]reflect.Type{}
 	p.msgTypeToValue = map[reflect.Type]uint16{}
-	p.context = context
 
-	for i, msgName := range msgNames {
-		t := proto.MessageType(msgName)
+	for i, t := range msgTypes {
+		if t.Kind() == reflect.Ptr {
+			t = t.Elem()
+		}
 		p.valueToMsgType[uint16(i)] = t
+
 		p.msgTypeToValue[t] = uint16(i)
 	}
 	return p
@@ -116,7 +117,7 @@ func (d *ProtobufProtocol) DecodeBody(body []byte, h *protobufPacketHeader) (msg
 		return nil, errors.New("No Message configured for this type")
 	}
 
-	msg = reflect.New(T.Elem()).Interface().(proto.Message)
+	msg = reflect.New(T).Interface().(proto.Message)
 	err = proto.Unmarshal(body, msg)
 	if err != nil {
 		return nil, err
