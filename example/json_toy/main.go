@@ -21,7 +21,10 @@ func main() {
 	json.Register(AddReq{})
 	json.Register(AddRsp{})
 
-	server, err := link.CreateServer("tcp", "0.0.0.0:0", json, 0 /* sync send */)
+	l, err := net.Listen("tcp", "0.0.0.0:0")
+	checkErr(err)
+
+	server := link.NewServer(l, json, 0 /* sync send */)
 	checkErr(err)
 	addr := server.Listener().Addr().String()
 	go server.Serve(link.HandlerFunc(serverSessionLoop))
