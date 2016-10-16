@@ -3,8 +3,9 @@ package main
 import (
 	"log"
 
-	"github.com/funny/link"
-	"github.com/funny/link/codec"
+	"github.com/FTwOoO/link"
+	"github.com/FTwOoO/link/codec"
+	"net"
 )
 
 type AddReq struct {
@@ -20,12 +21,14 @@ func main() {
 	json.Register(AddReq{})
 	json.Register(AddRsp{})
 
-	server, err := link.Serve("tcp", "0.0.0.0:0", json, 0 /* sync send */)
+	server, err := link.CreateServer("tcp", "0.0.0.0:0", json, 0 /* sync send */)
 	checkErr(err)
 	addr := server.Listener().Addr().String()
 	go server.Serve(link.HandlerFunc(serverSessionLoop))
 
-	client, err := link.Connect("tcp", addr, json, 0)
+	conn, err := net.Dial("tcp", addr)
+	checkErr(err)
+	client, err := link.CreateSession(conn, json, 0)
 	checkErr(err)
 	clientSessionLoop(client)
 }

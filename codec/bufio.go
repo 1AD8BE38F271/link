@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"io"
 
-	"github.com/funny/link"
+	"github.com/FTwOoO/link"
 )
 
 func Bufio(base link.Protocol, readBuf, writeBuf int) link.Protocol {
