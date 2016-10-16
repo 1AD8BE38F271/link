@@ -15,4 +15,32 @@
  * Author: FTwOoO <booobooob@gmail.com>
  */
 
+
 package link
+
+type Client struct {
+	pool     *SessionPool
+	protocol Protocol
+	dialer   Dialer
+}
+
+func NewClient(d Dialer, p Protocol, n int) *Client {
+	cli := &Client{
+		protocol:p,
+		dialer:d,
+	}
+
+	cli.pool = NewSessionPool(0, 0, func() (Codec, error) {
+		return CreateCodec(d, p)
+	}, n)
+	return cli
+}
+
+func (cli *Client) GetSession() (*Session, error) {
+	return cli.pool.Get()
+}
+
+func (cli *Client) Stop() {
+	cli.pool.Dispose()
+}
+
