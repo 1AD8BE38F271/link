@@ -15,25 +15,19 @@ var globalSessionId uint64
 type Session struct {
 	id       uint64
 	codec    Codec
-	manager  *Manager
 	sendChan chan interface{}
 
 	closeFlag      int32
 	closeChan      chan int
+
 	closeMutex     sync.Mutex
 	closeCallbacks *list.List
 
-	State interface{}
 }
 
 func NewSession(codec Codec, sendChanSize int) *Session {
-	return newSession(nil, codec, sendChanSize)
-}
-
-func newSession(manager *Manager, codec Codec, sendChanSize int) *Session {
 	session := &Session{
 		codec:     codec,
-		manager:   manager,
 		closeChan: make(chan int),
 		id:        atomic.AddUint64(&globalSessionId, 1),
 	}
@@ -56,9 +50,6 @@ func (session *Session) Close() error {
 	if atomic.CompareAndSwapInt32(&session.closeFlag, 0, 1) {
 		err := session.codec.Close()
 		close(session.closeChan)
-		if session.manager != nil {
-			session.manager.delSession(session)
-		}
 		session.invokeCloseCallbacks()
 		return err
 	}
@@ -106,16 +97,10 @@ func (session *Session) Send(msg interface{}) (err error) {
 	}
 }
 
-func (session *Session) SendChan() chan interface{} {
-	return session.sendChan
-}
 
-type closeCallback struct {
-	Handler interface{}
-	Func    func()
-}
+type closeCallbackFunc func(*Session)
 
-func (session *Session) addCloseCallback(handler interface{}, callback func()) {
+func (session *Session) addCloseCallback(callback closeCallbackFunc) {
 	if session.IsClosed() {
 		return
 	}
@@ -127,23 +112,7 @@ func (session *Session) addCloseCallback(handler interface{}, callback func()) {
 		session.closeCallbacks = list.New()
 	}
 
-	session.closeCallbacks.PushBack(closeCallback{handler, callback})
-}
-
-func (session *Session) removeCloseCallback(handler interface{}) {
-	if session.IsClosed() {
-		return
-	}
-
-	session.closeMutex.Lock()
-	defer session.closeMutex.Unlock()
-
-	for i := session.closeCallbacks.Front(); i != nil; i = i.Next() {
-		if i.Value.(closeCallback).Handler == handler {
-			session.closeCallbacks.Remove(i)
-			return
-		}
-	}
+	session.closeCallbacks.PushBack(callback)
 }
 
 func (session *Session) invokeCloseCallbacks() {
@@ -155,7 +124,7 @@ func (session *Session) invokeCloseCallbacks() {
 	}
 
 	for i := session.closeCallbacks.Front(); i != nil; i = i.Next() {
-		callback := i.Value.(closeCallback)
-		callback.Func()
+		callback := i.Value.(closeCallbackFunc)
+		callback(session)
 	}
 }

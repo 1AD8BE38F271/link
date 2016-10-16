@@ -40,7 +40,8 @@ func (manager *Manager) Dispose() {
 }
 
 func (manager *Manager) NewSession(codec Codec, sendChanSize int) *Session {
-	session := newSession(manager, codec, sendChanSize)
+	session := NewSession(codec, sendChanSize)
+	session.addCloseCallback(manager.delSession)
 	manager.putSession(session)
 	return session
 }
@@ -65,6 +66,7 @@ func (manager *Manager) putSession(session *Session) {
 
 func (manager *Manager) delSession(session *Session) {
 	if manager.disposeFlag {
+		//avoid deadload
 		manager.disposeWait.Done()
 		return
 	}
