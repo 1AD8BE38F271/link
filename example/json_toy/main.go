@@ -29,11 +29,12 @@ func main() {
 	addr := server.Listener().Addr().String()
 	go server.Serve(link.HandlerFunc(serverSessionLoop))
 
-	conn, err := net.Dial("tcp", addr)
+
+	client := link.NewClient(link.DialerFunc(func()(net.Conn, error){return net.Dial("tcp", addr)}), json, 0)
 	checkErr(err)
-	client, err := link.CreateSession(conn, json, 0)
-	checkErr(err)
-	clientSessionLoop(client)
+
+	session, _ := client.GetSession()
+	clientSessionLoop(session)
 }
 
 func serverSessionLoop(session *link.Session) {

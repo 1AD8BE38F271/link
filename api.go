@@ -9,6 +9,12 @@ type Dialer interface {
 	Dial() (net.Conn, error)
 }
 
+type DialerFunc func() (net.Conn, error)
+
+func (f DialerFunc) Dial() (net.Conn, error) {
+	return f()
+}
+
 type Protocol interface {
 	NewCodec(rw io.ReadWriter) (Codec, error)
 }
@@ -22,8 +28,6 @@ type Codec interface {
 type Handler interface {
 	HandleSession(*Session)
 }
-
-var _ Handler = HandlerFunc(nil)
 
 type HandlerFunc func(*Session)
 
