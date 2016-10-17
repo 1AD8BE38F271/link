@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"github.com/golang/protobuf/proto"
 	"github.com/FTwOoO/link"
+	"fmt"
 )
 
 type protobufPacketHeader struct {
@@ -60,8 +61,9 @@ func NewProtobufProtocol(msgTypes []reflect.Type) *ProtobufProtocol {
 	p.msgTypeToValue = map[reflect.Type]uint16{}
 
 	for i, t := range msgTypes {
-		if t.Kind() == reflect.Ptr {
-			t = t.Elem()
+		if t.Kind() != reflect.Ptr {
+			// protobuf's Message type must be pointer
+			return nil
 		}
 		p.valueToMsgType[uint16(i)] = t
 
@@ -77,6 +79,11 @@ func (d *ProtobufProtocol) EncodeMessage(msg proto.Message) (packet []byte, err 
 	}
 
 	h := new(protobufPacketHeader)
+	if _, ok := d.msgTypeToValue[reflect.TypeOf(msg)]; !ok {
+		fmt.Printf("No message type for this type %s", reflect.TypeOf(msg))
+		return nil, fmt.Errorf("No message type for this type %s", reflect.TypeOf(msg))
+	}
+
 	h.MessageType = d.msgTypeToValue[reflect.TypeOf(msg)]
 	h.ContentSize = uint16(len(body))
 	h.Hash = 0
@@ -117,7 +124,7 @@ func (d *ProtobufProtocol) DecodeBody(body []byte, h *protobufPacketHeader) (msg
 		return nil, errors.New("No Message configured for this type")
 	}
 
-	msg = reflect.New(T).Interface().(proto.Message)
+	msg = reflect.New(T.Elem()).Interface().(proto.Message)
 	err = proto.Unmarshal(body, msg)
 	if err != nil {
 		return nil, err

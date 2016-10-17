@@ -24,7 +24,7 @@ func compareTestPacket(t *testing.T, msg1 *TestPacket, msg2 *TestPacket) {
 
 func TestProtobufCodec(t *testing.T) {
 	var stream bytes.Buffer
-	protocol := NewProtobufProtocol([]reflect.Type{reflect.TypeOf(TestPacket{})})
+	protocol := NewProtobufProtocol([]reflect.Type{reflect.TypeOf(&TestPacket{})})
 
 	codec,  _ := protocol.NewCodec(&stream)
 
