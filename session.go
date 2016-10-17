@@ -67,9 +67,6 @@ func (session *Session) Codec() Codec {
 func (session *Session) Receive() (interface{}, error) {
 	session.readSpeed.Add(1)
 	msg, err := session.codec.Receive()
-	if err != nil {
-		session.Close()
-	}
 	return msg, err
 }
 
