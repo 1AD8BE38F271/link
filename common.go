@@ -19,8 +19,6 @@ package link
 
 import (
 	"errors"
-	"sync/atomic"
-	"time"
 )
 
 var (
@@ -28,42 +26,3 @@ var (
 	ErrSessionNotFound = errors.New("session not found.")
 )
 
-var (
-	UPDATE_INTERVAL time.Duration = 10
-)
-
-type SpeedCounter struct {
-	cnt      uint32
-	Speed    uint32
-	All      uint64
-	isClosed chan interface{}
-}
-
-func NewSpeedCounter() (sc *SpeedCounter) {
-	sc = &SpeedCounter{isClosed:make(chan interface{}, 1)}
-	go sc.Update()
-	return sc
-}
-
-func (sc *SpeedCounter) Close() error {
-	sc.isClosed <- 1
-	return nil
-}
-
-func (sc *SpeedCounter) Update() {
-	hsHeartbeat := time.Tick(UPDATE_INTERVAL * time.Second)
-	for {
-		select {
-		case <-hsHeartbeat:
-			c := atomic.SwapUint32(&sc.cnt, 0)
-			sc.Speed = c / uint32(UPDATE_INTERVAL)
-			sc.All += uint64(c)
-		case <-sc.isClosed:
-			return
-		}
-	}
-}
-
-func (sc *SpeedCounter) Add(s uint32) uint32 {
-	return atomic.AddUint32(&sc.cnt, s)
-}

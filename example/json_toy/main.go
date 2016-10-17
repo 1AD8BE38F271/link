@@ -29,8 +29,9 @@ func main() {
 	addr := server.Listener().Addr().String()
 	go server.Serve(link.HandlerFunc(serverSessionLoop))
 
-
-	client := link.NewClient(link.DialerFunc(func()(net.Conn, error){return net.Dial("tcp", addr)}), json, 0)
+	client := link.NewClient(link.DialerFunc(func() (net.Conn, error) {
+		return net.Dial("tcp", addr)
+	}), json, 0, 0, 0)
 	checkErr(err)
 
 	session, _ := client.GetSession()
